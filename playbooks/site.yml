@@ -1,0 +1,9 @@
+- hosts: lb
+  vars:
+    load_balancer_is_required: true
+    enable_nginx: true
+    enable_apache: false
+  tasks:
+    - include_tasks: ../dynamic-assignments/loadbalancers.yml
+      when: load_balancer_is_required
+
