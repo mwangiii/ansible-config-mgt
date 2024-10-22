@@ -1,10 +1,10 @@
 [tooling]
-172.31.42.4 ansible_ssh_user='ec2'
+172.31.42.4 ansible_ssh_user='ubuntu'
 
 
 
 [todo]
-172.31.42.4 ansible_ssh_user='ec2'
+172.31.42.4 ansible_ssh_user='ubuntu'
 
 
 
