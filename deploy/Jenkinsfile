@@ -31,11 +31,11 @@ pipeline {
             steps {
                 script {
                     def allHosts = [
-                        'ubuntu@172.31.42.4',
-                        'ubuntu@172.31.43.75', 
-                        'ubuntu@172.31.39.226',  
-                        'ec2-user@172.31.42.4', 
-                        'ubuntu@172.31.43.170'    
+                        // 'ubuntu@172.31.42.4',
+                        // 'ubuntu@172.31.43.75', 
+                        // 'ubuntu@172.31.39.226',  
+                        // 'ec2-user@172.31.42.4', 
+                        // 'ubuntu@172.31.43.170'    
                     ]
 
                     sshagent(['private-key']) {
