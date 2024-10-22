@@ -16,7 +16,7 @@ pipeline {
 
         stage('Checkout SCM') {
             steps {
-                git branch: 'main', url: 'https://github.com/mimi-netizen/ansible-config-mgt.git'
+                git branch: 'main', url: 'https://github.com/mwangiii/ansible-config-mgt'
             }
         }
 
@@ -31,8 +31,11 @@ pipeline {
             steps {
                 script {
                     def allHosts = [
-                        'ubuntu@172.31.4.97',
-                        'ec2-user@172.31.4.97'
+                        'ubuntu@172.31.42.4',
+                        'ubuntu@172.31.43.75', 
+                        'ubuntu@172.31.39.226',  
+                        'ec2-user@172.31.42.4', 
+                        'ubuntu@172.31.43.170'    
                     ]
 
                     sshagent(['private-key']) {
