@@ -1,0 +1,16 @@
+[tooling]
+172.31.42.4 ansible_ssh_user='ec2'
+
+[todo]
+<SIT-Todo-Web-Server-Private-IP-Address>
+
+[nginx]
+172.31.39.226 ansible_ssh_user='ec2'
+
+[db:vars]
+ansible_user=ec2-user
+ansible_python_interpreter=/usr/bin/python
+
+[db]
+172.31.42.4 ansible_ssh_user='ec2'
+
