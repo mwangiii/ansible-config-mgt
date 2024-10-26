@@ -1,14 +1,13 @@
 [tooling]
-172.31.43.75 ansible_ssh_user='ubuntu'
+10.138.0.2
 
 [nginx]
-172.31.39.226  ansible_ssh_user='ubuntu'
-
+10.128.0.2
 
 [db:vars]
-ansible_user=ec2-user
+ansible_user=njekev65
 ansible_python_interpreter=/usr/bin/python
 
 [db]
-172.31.42.4 ansible_ssh_user='ubuntu'
+34.176.68.145
 

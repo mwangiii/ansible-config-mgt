@@ -1,8 +1,8 @@
 [jenkins]
-172.31.42.4 ansible_ssh_user='ubuntu'
+10.128.0.3
 
 [nginx]
-172.31.42.4 ansible_ssh_user='ubuntu'
+10.128.0.2
 
 [sonarqube]
-172.31.42.4 ansible_ssh_user='ubuntu'
+10.128.0.4

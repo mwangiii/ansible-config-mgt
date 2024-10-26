@@ -1,16 +1,13 @@
 [tooling]
-172.31.42.4 ansible_ssh_user='ubuntu'
-
-[todo]
-<SIT-Todo-Web-Server-Private-IP-Address>
+10.138.0.2
 
 [nginx]
-172.31.39.226  ansible_ssh_user='ubuntu'
+10.128.0.2
 
-[db:vars]
-ansible_user=ubuntu
+db:vars]
+ansible_user=njekev65
 ansible_python_interpreter=/usr/bin/python
 
 [db]
-172.31.42.4 ansible_ssh_user='ubuntu'
+34.176.68.145
 
