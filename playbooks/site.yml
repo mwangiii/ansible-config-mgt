@@ -1,17 +1,8 @@
 ---
-- hosts: all
-  name: Include dynamic variables
-  become: yes
+- name: Create an empty file on the target hosts
+  hosts: all
   tasks:
-    - include_tasks: ../dynamic-assignments/env-vars.yml
-      tags: 
-        - always
-
-- name: tooling
-  import_playbook: ../static-assignments/webservers.yml
-
-- name: nginx
-  import_playbook: ../static-assignments/tooling.yml
-
-- name: db
-  import_playbook: ../static-assignments/db_servers.yml
+    - name: Create an empty file
+      file:
+        path: ~/emptyfile.md
+        state: touch
