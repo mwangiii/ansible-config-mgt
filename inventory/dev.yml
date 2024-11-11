@@ -9,5 +9,4 @@ ansible_user=njekev65
 ansible_python_interpreter=/usr/bin/python
 
 [db]
-34.176.68.145
-
+10.194.0.2
