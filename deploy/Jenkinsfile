@@ -32,12 +32,12 @@ pipeline {
                 script {
                     def allHosts = [
                         'njekev65@34.57.215.181', // gcp-nginx
-                        'njekev65@34.16.30.11',   // gcp-jenkins
-                        'njekev65@34.69.252.215',  // gcp-artifactory
-                        'njekev65@35.188.143.65',  // gcp-sonarqube
-                        'njekev65@34.127.63.84',   // gcp-tooling
+                        'njekev65@34.56.9.152',   // gcp-jenkins
+                        'njekev65@34.71.158.12',  // gcp-artifactory
+                        'njekev65@35.223.138.210',  // gcp-sonarqube
+                        'njekev65@34.82.136.163',   // gcp-tooling
                         'njekev65@34.169.48.220',  // gcp-todo
-                        'njekev65@34.176.68.145'   // gcp-db
+                        'njekev65@34.176.63.64'   // gcp-db
                     ]
 
                     sshagent(['private-key']) {
