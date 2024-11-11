@@ -2,7 +2,7 @@
 - name: Create an empty file on the target hosts
   hosts: all
   tasks:
-    - name: Create an empty file
+    - name: Delete an empty file
       file:
         path: ~/emptyfile.md
-        state: touch
+        state: absent
