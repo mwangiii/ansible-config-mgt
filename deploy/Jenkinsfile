@@ -55,14 +55,15 @@ pipeline {
             }
         }
 
-        stage('Add Artifactory Repository and Install Artifactory') {
+        stage('Add Artifactory Repository and Install Artifactory OSS') {
             steps {
                 script {
-                    // Add the JFrog Artifactory repository and install Artifactory on the remote server
+                    // Add the JFrog Artifactory OSS repository and install Artifactory on the remote server
                     sshagent(['private-key']) {
                         sh '''
-                        ssh ${ARTIFACTORY_SERVER} "curl -fsSL https://releases.jfrog.io/artifactory/api/gpg/key/public | sudo tee /etc/apt/trusted.gpg.d/jfrog.asc"
-                        ssh ${ARTIFACTORY_SERVER} "echo \"deb https://releases.jfrog.io/artifactory/debian artifactory-oss 7.51.2 main\" | sudo tee /etc/apt/sources.list.d/jfrog-artifactory.list"
+                        ssh ${ARTIFACTORY_SERVER} "wget -qO - https://releases.jfrog.io/artifactory/api/gpg/key/public | sudo apt-key add -"
+                        ssh ${ARTIFACTORY_SERVER} "DISTRO=$(lsb_release -cs)"
+                        ssh ${ARTIFACTORY_SERVER} "echo \"deb https://releases.jfrog.io/artifactory/artifactory-debs ${DISTRO} main\" | sudo tee -a /etc/apt/sources.list"
                         ssh ${ARTIFACTORY_SERVER} "sudo apt-get update"
                         ssh ${ARTIFACTORY_SERVER} "sudo apt-get install -y jfrog-artifactory-oss"
                         '''
