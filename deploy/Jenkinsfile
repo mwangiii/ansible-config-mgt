@@ -1,107 +1,67 @@
 pipeline {
     agent any
-
     environment {
-        ARTIFACTORY_VERSION = '7.51.2'  // Update to the desired version of Artifactory
-        JAVA_VERSION = '11'  // Adjust based on the Artifactory requirements
-        ARTIFACTORY_SERVER = 'njekev65@34.71.158.12'  // Artifactory server IP or hostname
-        ANSIBLE_CONFIG = "${WORKSPACE}/deploy/ansible.cfg"
+        ARTIFACTORY_SERVER = 'njekev65@34.71.158.12'  // Replace with your actual Artifactory server
     }
-
     stages {
-        stage('Initial cleanup') {
-            steps {
-                dir("${WORKSPACE}") {
-                    deleteDir()
-                }
-            }
-        }
-
-        stage('Checkout SCM') {
-            steps {
-                git branch: 'main', url: 'https://github.com/mwangiii/ansible-config-mgt.git'
-            }
-        }
-
-        stage('Prepare Ansible For Execution') {
-            steps {
-                sh 'echo ${WORKSPACE}'
-                sh 'sed -i "3 a roles_path=${WORKSPACE}/roles" ${WORKSPACE}/deploy/ansible.cfg'
-            }
-        }
-
-        stage('Test SSH Connection to Artifactory Server') {
-            steps {
-                script {
-                    // Test SSH connection to Artifactory server
-                    sshagent(['private-key']) {
-                        sh "ssh -o StrictHostKeyChecking=no ${ARTIFACTORY_SERVER} exit"
-                    }
-                }
-            }
-        }
-
         stage('Install Dependencies on Artifactory Server') {
             steps {
                 script {
-                    // Install dependencies (Java, PostgreSQL, etc.) on the Artifactory server
+                    // Install necessary dependencies (Java, PostgreSQL, etc.) on the Artifactory server
                     sshagent(['private-key']) {
                         sh '''
+                        # Update the system and install necessary dependencies
                         ssh ${ARTIFACTORY_SERVER} "sudo apt-get update -y && sudo apt-get upgrade -y"
-                        ssh ${ARTIFACTORY_SERVER} "sudo apt-get install -y openjdk-${JAVA_VERSION}-jdk wget curl gnupg lsb-release ca-certificates postgresql postgresql-contrib"
+                        ssh ${ARTIFACTORY_SERVER} "sudo apt-get install -y openjdk-11-jdk wget curl gnupg lsb-release ca-certificates postgresql postgresql-contrib"
                         '''
                     }
                 }
             }
         }
 
-        stage('Add Artifactory Repository and Install Artifactory OSS') {
+        stage('Remove Old Artifactory Repository') {
             steps {
                 script {
-                    // Add the JFrog Artifactory OSS repository and install Artifactory on the remote server
+                    // Remove the Bintray repository that is causing the 404 error
                     sshagent(['private-key']) {
                         sh '''
-                        ssh ${ARTIFACTORY_SERVER} "wget -qO - https://releases.jfrog.io/artifactory/api/gpg/key/public | sudo apt-key add -"
-                        ssh ${ARTIFACTORY_SERVER} "DISTRO=$(lsb_release -cs)"
-                        ssh ${ARTIFACTORY_SERVER} "echo \"deb https://releases.jfrog.io/artifactory/artifactory-debs ${DISTRO} main\" | sudo tee -a /etc/apt/sources.list"
+                        ssh ${ARTIFACTORY_SERVER} "sudo rm -f /etc/apt/sources.list.d/jfrog-artifactory.list"
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Add New JFrog Artifactory Repository') {
+            steps {
+                script {
+                    // Add the new JFrog Artifactory repository
+                    sshagent(['private-key']) {
+                        sh '''
+                        # Add the JFrog public key
+                        ssh ${ARTIFACTORY_SERVER} "curl -fsSL https://releases.jfrog.io/artifactory/api/gpg/key/public | sudo apt-key add -"
+                        
+                        # Add the Artifactory repository to the system
+                        ssh ${ARTIFACTORY_SERVER} "echo 'deb https://releases.jfrog.io/artifactory/artifactory-debs focal main' | sudo tee /etc/apt/sources.list.d/jfrog-artifactory.list"
+                        
+                        # Update the package list to include the new repository
                         ssh ${ARTIFACTORY_SERVER} "sudo apt-get update"
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Install Artifactory') {
+            steps {
+                script {
+                    // Install Artifactory from the updated repository
+                    sshagent(['private-key']) {
+                        sh '''
                         ssh ${ARTIFACTORY_SERVER} "sudo apt-get install -y jfrog-artifactory-oss"
                         '''
                     }
                 }
-            }
-        }
-
-        stage('Start Artifactory Service') {
-            steps {
-                script {
-                    // Enable and start the Artifactory service on the Artifactory server
-                    sshagent(['private-key']) {
-                        sh '''
-                        ssh ${ARTIFACTORY_SERVER} "sudo systemctl enable artifactory"
-                        ssh ${ARTIFACTORY_SERVER} "sudo systemctl start artifactory"
-                        '''
-                    }
-                }
-            }
-        }
-
-        stage('Verify Artifactory Installation') {
-            steps {
-                script {
-                    // Verify that Artifactory is running on the remote server
-                    sshagent(['private-key']) {
-                        sh '''
-                        ssh ${ARTIFACTORY_SERVER} "sudo systemctl status artifactory"
-                        '''
-                    }
-                }
-            }
-        }
-
-        stage('Clean Workspace after build') {
-            steps {
-                cleanWs(cleanWhenAborted: true, cleanWhenFailure: true, cleanWhenNotBuilt: true, cleanWhenUnstable: true, deleteDirs: true)
             }
         }
     }
