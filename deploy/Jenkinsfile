@@ -2,6 +2,9 @@ pipeline {
     agent any
 
     environment {
+        ARTIFACTORY_VERSION = '7.51.2'  // Update to the desired version of Artifactory
+        JAVA_VERSION = '11'  // Adjust based on the Artifactory requirements
+        ARTIFACTORY_SERVER = 'njekev65@34.71.158.12'  // Artifactory server IP or hostname
         ANSIBLE_CONFIG = "${WORKSPACE}/deploy/ansible.cfg"
     }
 
@@ -27,39 +30,70 @@ pipeline {
             }
         }
 
-        stage('Test SSH Connections') {
+        stage('Test SSH Connection to Artifactory Server') {
             steps {
                 script {
-                    def allHosts = [
-                        'njekev65@34.57.215.181', // gcp-nginx
-                        'njekev65@34.56.9.152',   // gcp-jenkins
-                        'njekev65@34.71.158.12',  // gcp-artifactory
-                        'njekev65@35.223.138.210',  // gcp-sonarqube
-                        'njekev65@34.82.136.163',   // gcp-tooling
-                        'njekev65@34.169.27.208',  // gcp-todo
-                        'njekev65@34.176.63.64'   // gcp-db
-                    ]
-
+                    // Test SSH connection to Artifactory server
                     sshagent(['private-key']) {
-                        allHosts.each { host ->
-                            sh "ssh -o StrictHostKeyChecking=no ${host} exit"
-                        }
+                        sh "ssh -o StrictHostKeyChecking=no ${ARTIFACTORY_SERVER} exit"
                     }
                 }
             }
         }
 
-        stage('Run Ansible playbook') {
+        stage('Install Dependencies on Artifactory Server') {
             steps {
-                sshagent(['private-key']) {
-                    ansiblePlaybook(
-                        become: true,
-                        credentialsId: 'private-key',
-                        disableHostKeyChecking: true,
-                        installation: 'ansible',
-                        inventory: '${WORKSPACE}/inventory/dev.yml',
-                        playbook: '${WORKSPACE}/playbooks/site.yml'
-                    )
+                script {
+                    // Install dependencies (Java, PostgreSQL, etc.) on the Artifactory server
+                    sshagent(['private-key']) {
+                        sh '''
+                        ssh ${ARTIFACTORY_SERVER} "sudo apt-get update -y && sudo apt-get upgrade -y"
+                        ssh ${ARTIFACTORY_SERVER} "sudo apt-get install -y openjdk-${JAVA_VERSION}-jdk wget curl gnupg lsb-release ca-certificates postgresql postgresql-contrib"
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Add Artifactory Repository and Install Artifactory') {
+            steps {
+                script {
+                    // Add the JFrog Artifactory repository and install Artifactory on the remote server
+                    sshagent(['private-key']) {
+                        sh '''
+                        ssh ${ARTIFACTORY_SERVER} "curl -fsSL https://bintray.com/user/downloadSubjectPublicKey?username=jfrog | sudo tee /etc/apt/trusted.gpg.d/jfrog.asc"
+                        ssh ${ARTIFACTORY_SERVER} "echo \"deb https://jfrog.bintray.com/artifactory-deb artifactory-${ARTIFACTORY_VERSION} main\" | sudo tee /etc/apt/sources.list.d/jfrog-artifactory.list"
+                        ssh ${ARTIFACTORY_SERVER} "sudo apt-get update"
+                        ssh ${ARTIFACTORY_SERVER} "sudo apt-get install -y jfrog-artifactory-oss"
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Start Artifactory Service') {
+            steps {
+                script {
+                    // Enable and start the Artifactory service on the Artifactory server
+                    sshagent(['private-key']) {
+                        sh '''
+                        ssh ${ARTIFACTORY_SERVER} "sudo systemctl enable artifactory"
+                        ssh ${ARTIFACTORY_SERVER} "sudo systemctl start artifactory"
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Verify Artifactory Installation') {
+            steps {
+                script {
+                    // Verify that Artifactory is running on the remote server
+                    sshagent(['private-key']) {
+                        sh '''
+                        ssh ${ARTIFACTORY_SERVER} "sudo systemctl status artifactory"
+                        '''
+                    }
                 }
             }
         }
