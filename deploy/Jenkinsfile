@@ -22,10 +22,12 @@ pipeline {
         stage('Remove Old Artifactory Repository') {
             steps {
                 script {
-                    // Remove the Bintray repository that is causing the 404 error
+                    // Remove the old Bintray repository that is causing the 404 error
                     sshagent(['private-key']) {
                         sh '''
+                        # Remove any old Bintray repository entries
                         ssh ${ARTIFACTORY_SERVER} "sudo rm -f /etc/apt/sources.list.d/jfrog-artifactory.list"
+                        ssh ${ARTIFACTORY_SERVER} "sudo rm -f /etc/apt/sources.list.d/jfrog-bintray.list"
                         '''
                     }
                 }
