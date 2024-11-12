@@ -36,7 +36,7 @@ pipeline {
                         'njekev65@34.71.158.12',  // gcp-artifactory
                         'njekev65@35.223.138.210',  // gcp-sonarqube
                         'njekev65@34.82.136.163',   // gcp-tooling
-                        'njekev65@34.169.48.220',  // gcp-todo
+                        'njekev65@34.169.27.208',  // gcp-todo
                         'njekev65@34.176.63.64'   // gcp-db
                     ]
 
