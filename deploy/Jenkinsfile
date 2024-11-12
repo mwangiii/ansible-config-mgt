@@ -1,70 +1,70 @@
 pipeline {
     agent any
+
     environment {
-        ARTIFACTORY_SERVER = 'njekev65@34.71.158.12'  // Replace with your actual Artifactory server
+        ARTIFACTORY_REPO = "https://releases.jfrog.io/artifactory/artifactory-debs"
+        DISTRO = sh(script: "lsb_release -cs", returnStdout: true).trim()
     }
+
     stages {
-        stage('Install Dependencies on Artifactory Server') {
+        stage('Uninstall Artifactory') {
             steps {
                 script {
-                    // Install necessary dependencies (Java, PostgreSQL, etc.) on the Artifactory server
-                    sshagent(['private-key']) {
-                        sh '''
-                        # Update the system and install necessary dependencies
-                        ssh ${ARTIFACTORY_SERVER} "sudo apt-get update -y && sudo apt-get upgrade -y"
-                        ssh ${ARTIFACTORY_SERVER} "sudo apt-get install -y openjdk-11-jdk wget curl gnupg lsb-release ca-certificates postgresql postgresql-contrib"
-                        '''
-                    }
+                    // Uninstall any existing Artifactory
+                    sh """
+                    sudo apt-get remove --purge -y jfrog-artifactory-oss
+                    sudo apt-get autoremove -y
+                    sudo rm -rf /opt/jfrog
+                    sudo rm -rf /var/opt/jfrog
+                    sudo rm -f /etc/apt/sources.list.d/jfrog-artifactory.list
+                    sudo rm -f /etc/apt/trusted.gpg.d/jfrog.asc
+                    sudo apt-get update
+                    """
                 }
             }
         }
 
-        stage('Remove Old Artifactory Repository') {
+        stage('Install JFrog Artifactory') {
             steps {
                 script {
-                    // Remove the old Bintray repository that is causing the 404 error
-                    sshagent(['private-key']) {
-                        sh '''
-                        # Remove any old Bintray repository entries
-                        ssh ${ARTIFACTORY_SERVER} "sudo rm -f /etc/apt/sources.list.d/jfrog-artifactory.list"
-                        ssh ${ARTIFACTORY_SERVER} "sudo rm -f /etc/apt/sources.list.d/jfrog-bintray.list"
-                        '''
-                    }
+                    // Add the Artifactory repository and install it
+                    sh """
+                    sudo sh -c 'echo "deb ${ARTIFACTORY_REPO} ${DISTRO} main" > /etc/apt/sources.list.d/jfrog-artifactory.list'
+                    curl -fsSL https://releases.jfrog.io/artifactory/api/gpg/key/public | sudo tee /etc/apt/trusted.gpg.d/jfrog.asc
+                    sudo apt-get update
+                    sudo apt-get install -y jfrog-artifactory-oss
+                    """
                 }
             }
         }
 
-        stage('Add New JFrog Artifactory Repository') {
+        stage('Start Artifactory') {
             steps {
                 script {
-                    // Add the new JFrog Artifactory repository
-                    sshagent(['private-key']) {
-                        sh '''
-                        # Add the JFrog public key
-                        ssh ${ARTIFACTORY_SERVER} "curl -fsSL https://releases.jfrog.io/artifactory/api/gpg/key/public | sudo apt-key add -"
-                        
-                        # Add the Artifactory repository to the system
-                        ssh ${ARTIFACTORY_SERVER} "echo 'deb https://releases.jfrog.io/artifactory/artifactory-debs focal main' | sudo tee /etc/apt/sources.list.d/jfrog-artifactory.list"
-                        
-                        # Update the package list to include the new repository
-                        ssh ${ARTIFACTORY_SERVER} "sudo apt-get update"
-                        '''
-                    }
+                    // Start Artifactory service
+                    sh """
+                    sudo systemctl enable artifactory
+                    sudo systemctl start artifactory
+                    """
                 }
             }
         }
 
-        stage('Install Artifactory') {
+        stage('Verify Installation') {
             steps {
                 script {
-                    // Install Artifactory from the updated repository
-                    sshagent(['private-key']) {
-                        sh '''
-                        ssh ${ARTIFACTORY_SERVER} "sudo apt-get install -y jfrog-artifactory-oss"
-                        '''
-                    }
+                    // Verify if Artifactory is running
+                    sh """
+                    sudo systemctl status artifactory
+                    """
                 }
             }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
         }
     }
 }
