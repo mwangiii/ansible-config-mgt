@@ -8,12 +8,16 @@ pipeline {
             }
         }
 
-        stage('Install Artifactory on gcp-artifactory') {
+        stage('Run Ansible playbook') {
             steps {
                 sshagent(['private-key']) {
-                    sh '''
-                    ansible-playbook -i inventory/ci.yml playbooks/site.yml
-                    '''
+                    ansiblePlaybook(
+                        become: true,
+                        credentialsId: 'private-key',
+                        disableHostKeyChecking: true,
+                        installation: 'ansible',
+                        playbook: 'playbooks/site.yml'
+                    )
                 }
             }
         }
