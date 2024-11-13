@@ -33,8 +33,8 @@ pipeline {
                     sh '''
                     ssh -o StrictHostKeyChecking=no njekev65@34.71.158.12 << 'EOF'
                         sudo sh -c 'echo "deb https://releases.jfrog.io/artifactory/artifactory-debs focal main" > /etc/apt/sources.list.d/jfrog-artifactory.list'
-                        sudo apt update
-                        sudo apt-get install jfrog-artifactory-oss
+                        sudo apt update -y
+                        sudo apt-get install jfrog-artifactory-oss -y
                     EOF
                     '''
                 }
