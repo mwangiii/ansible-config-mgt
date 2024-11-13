@@ -1,10 +1,18 @@
 pipeline {
     agent any
-
+    
     stages {
         stage('Checkout SCM') {
             steps {
                 git branch: 'main', url: 'https://github.com/mwangiii/ansible-config-mgt.git'
+            }
+        }
+
+        stage('Verify Inventory') {
+            steps {
+                script {
+                    sh 'cat inventory/ci.yml'  // Display the content of the inventory file
+                }
             }
         }
 
@@ -16,7 +24,8 @@ pipeline {
                         credentialsId: 'private-key',
                         disableHostKeyChecking: true,
                         installation: 'ansible',
-                        playbook: 'playbooks/site.yml'
+                        playbook: 'playbooks/site.yml',
+                        inventory: 'inventory/ci.yml'  // Point to the correct inventory file
                     )
                 }
             }
