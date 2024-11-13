@@ -1,7 +1,7 @@
 ---
 - name: Update and upgrade all Ubuntu servers
-  hosts: all
-  become: yes  # This will run the tasks as a superuser
+  hosts: jenkins, nginx, sonarqube
+  become: yes
   tasks:
     - name: Update apt cache
       apt:
