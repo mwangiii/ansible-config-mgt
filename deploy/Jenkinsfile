@@ -1,34 +1,36 @@
 pipeline {
     agent any
-    
     stages {
-        stage('Checkout SCM') {
+        stage('Prepare Ansible Environment') {
             steps {
-                git branch: 'main', url: 'https://github.com/mwangiii/ansible-config-mgt.git'
+                echo "Setting up Ansible environment for Artifactory installation..."
+                sh 'ansible-galaxy collection install jfrog.platform'
             }
         }
-
-        stage('Verify Inventory') {
+        stage('Install Artifactory') {
             steps {
                 script {
-                    sh 'cat inventory/ci.yml'  // Display the content of the inventory file
+                    try {
+                        echo "Running Ansible playbook to install Artifactory..."
+                        sh 'ansible-playbook -i inventory/artifactory.yml playbooks/site.yml'
+                    } catch (Exception e) {
+                        echo "An error occurred during the playbook execution: ${e.message}"
+                        currentBuild.result = 'FAILURE'
+                        error("Installation failed, please check the logs for more details.")
+                    }
                 }
             }
         }
-
-        stage('Run Ansible playbook') {
-            steps {
-                sshagent(['private-key']) {
-                    ansiblePlaybook(
-                        become: true,
-                        credentialsId: 'private-key',
-                        disableHostKeyChecking: true,
-                        installation: 'ansible',
-                        playbook: 'playbooks/site.yml',
-                        inventory: 'inventory/ci.yml'  // Point to the correct inventory file
-                    )
-                }
-            }
+    }
+    post {
+        always {
+            echo "Pipeline completed. Check for success or failure logs."
+        }
+        success {
+            echo "JFrog Artifactory installation completed successfully."
+        }
+        failure {
+            echo "Installation failed. See logs in Blue Ocean for details."
         }
     }
 }

@@ -1,22 +1,14 @@
 ---
-- name: Install Artifactory
+- name: Install JFrog Artifactory
   hosts: artifactory
   become: yes
   tasks:
-    - name: Add Artifactory repository
-      apt_repository:
-        repo: "deb https://releases.jfrog.io/artifactory/artifactory-debs focal main"
-        state: present
+    - name: Install JFrog Platform collection from Ansible Galaxy
+      ansible.builtin.command:
+        cmd: "ansible-galaxy collection install jfrog.platform"
+      register: install_output
+      ignore_errors: no
 
-    - name: Update apt cache
-      apt:
-        update_cache: yes
-
-    - name: Install JFrog Artifactory OSS and net-tools
-      apt:
-        name:
-          - jfrog-artifactory-oss
-          - net-tools
-        state: present
-        force: yes
-
+    - name: Print installation result
+      ansible.builtin.debug:
+        var: install_output.stdout
