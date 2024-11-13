@@ -1,36 +1,34 @@
----
-- name: Install JFrog Artifactory
-  hosts: artifactory
-  become: yes
-  tasks:
-    - name: Install JFrog Platform collection from Ansible Galaxy
-      ansible.builtin.command:
-        cmd: ansible-galaxy collection install jfrog.artifactory
-      register: install_output
-      ignore_errors: no
+- name: Install JFrog Platform collection from Ansible Galaxy
+  ansible.builtin.command:
+    argv:
+      - ansible-galaxy
+      - collection
+      - install
+      - jfrog.artifactory
+  register: install_output
+  ignore_errors: no
 
+- name: Print installation result
+  ansible.builtin.debug:
+    var: install_output.stdout
 
-    - name: Print installation result
-      ansible.builtin.debug:
-        var: install_output.stdout
+- name: Start JFrog Artifactory service
+  ansible.builtin.systemd:
+    name: artifactory
+    state: started
+    enabled: yes
+  when: install_output.rc == 0  # Check if the installation was successful
 
-    - name: Start JFrog Artifactory service
-      ansible.builtin.systemd:
-        name: artifactory
-        state: started
-        enabled: yes
-      when: install_output.rc == 0  # Check if the installation was successful
+- name: Check if Artifactory port is open
+  ansible.builtin.wait_for:
+    host: "{{ inventory_hostname }}"
+    port: 8081
+    state: started
+    delay: 10
+    timeout: 60
+  register: port_check
+  ignore_errors: no
 
-    - name: Check if Artifactory port is open
-      ansible.builtin.wait_for:
-        host: "{{ inventory_hostname }}"
-        port: 8081
-        state: started
-        delay: 10
-        timeout: 60
-      register: port_check
-      ignore_errors: no
-
-    - name: Print port check result
-      ansible.builtin.debug:
-        var: port_check
+- name: Print port check result
+  ansible.builtin.debug:
+    var: port_check
