@@ -1,14 +1,12 @@
 ---
-- name: Install JFrog Artifactory
-  hosts: artifactory
-  become: yes
+- name: Update and upgrade all Ubuntu servers
+  hosts: all
+  become: yes  # This will run the tasks as a superuser
   tasks:
-    - name: Install JFrog Platform collection from Ansible Galaxy
-      ansible.builtin.command:
-        cmd: "ansible-galaxy collection install jfrog.platform"
-      register: install_output
-      ignore_errors: no
+    - name: Update apt cache
+      apt:
+        update_cache: yes
 
-    - name: Print installation result
-      ansible.builtin.debug:
-        var: install_output.stdout
+    - name: Upgrade all packages
+      apt:
+        upgrade: dist
