@@ -1,30 +1,71 @@
-
 pipeline {
     agent any
 
     environment {
-        ANSIBLE_HOST_KEY_CHECKING = "False"  // Disable host key checking for Ansible
+        ANSIBLE_CONFIG = "${WORKSPACE}/deploy/ansible.cfg"
     }
 
     stages {
-        stage('Run Ansible Playbook') {
+        stage('Initial cleanup') {
+            steps {
+                dir("${WORKSPACE}") {
+                    deleteDir()
+                }
+            }
+        }
+
+        stage('Checkout SCM') {
+            steps {
+                git branch: 'main', url: 'https://github.com/mwangiii/ansible-config-mgt.git'
+            }
+        }
+
+        stage('Prepare Ansible For Execution') {
+            steps {
+                sh 'echo ${WORKSPACE}'
+                sh 'sed -i "3 a roles_path=${WORKSPACE}/roles" ${WORKSPACE}/deploy/ansible.cfg'
+            }
+        }
+
+        stage('Test SSH Connections') {
+            steps {
+                script {
+                    def allHosts = [
+                        'njekev65@10.128.0.4'
+                        'njekev65@10.128.0.3'
+                        'njekev65@10.128.0.4'
+                        'njekev65@10.128.0.4'
+
+                    ]
+
+                    sshagent(['private-key']) {
+                        allHosts.each { host ->
+                            sh "ssh -o StrictHostKeyChecking=no ${host} exit"
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Run Ansible playbook') {
             steps {
                 sshagent(['private-key']) {
                     ansiblePlaybook(
                         become: true,
                         credentialsId: 'private-key',
+                        disableHostKeyChecking: true,
                         installation: 'ansible',
-                        inventory: "${WORKSPACE}/inventory/artifactory.yml",
-                        playbook: "${WORKSPACE}/playbooks/site.yml"
+                        inventory: '${WORKSPACE}/inventory/ciyml',
+                        playbook: '${WORKSPACE}/playbooks/site.yml'
                     )
                 }
             }
         }
-    }
 
-    post {
-        always {
-            echo "Pipeline completed."
+        stage('Clean Workspace after build') {
+            steps {
+                cleanWs(cleanWhenAborted: true, cleanWhenFailure: true, cleanWhenNotBuilt: true, cleanWhenUnstable: true, deleteDirs: true)
+            }
         }
     }
 }
