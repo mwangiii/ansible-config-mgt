@@ -4,7 +4,7 @@
   become: yes
   tasks:
     - name: Install JFrog Platform collection from Ansible Galaxy
-      ansible.builtin.command: ansible-galaxy collection install jfrog.artifactory
+      ansible.builtin.shell: ansible-galaxy collection install jfrog.artifactory
       register: install_output
       ignore_errors: no
 
