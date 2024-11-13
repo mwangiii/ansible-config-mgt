@@ -31,11 +31,10 @@ pipeline {
             steps {
                 script {
                     def allHosts = [
+                        'njekev65@10.128.0.4',
+                        'njekev65@10.128.0.3',
+                        'njekev65@10.128.0.4',
                         'njekev65@10.128.0.4'
-                        'njekev65@10.128.0.3'
-                        'njekev65@10.128.0.4'
-                        'njekev65@10.128.0.4'
-
                     ]
 
                     sshagent(['private-key']) {
