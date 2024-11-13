@@ -2,69 +2,49 @@ pipeline {
     agent any
 
     environment {
-        ARTIFACTORY_REPO = "https://releases.jfrog.io/artifactory/artifactory-debs"
-        DISTRO = sh(script: "lsb_release -cs", returnStdout: true).trim()
+        ANSIBLE_CONFIG = "${WORKSPACE}/deploy/ansible.cfg"
     }
 
     stages {
-        stage('Uninstall Artifactory') {
+        stage('Initial cleanup') {
             steps {
-                script {
-                    // Uninstall any existing Artifactory
-                    sh """
-                    sudo apt-get remove --purge -y jfrog-artifactory-oss
-                    sudo apt-get autoremove -y
-                    sudo rm -rf /opt/jfrog
-                    sudo rm -rf /var/opt/jfrog
-                    sudo rm -f /etc/apt/sources.list.d/jfrog-artifactory.list
-                    sudo rm -f /etc/apt/trusted.gpg.d/jfrog.asc
-                    sudo apt-get update
-                    """
+                dir("${WORKSPACE}") {
+                    deleteDir()
                 }
             }
         }
 
-        stage('Install JFrog Artifactory') {
+        stage('Checkout SCM') {
             steps {
-                script {
-                    // Add the Artifactory repository and install it
-                    sh """
-                    sudo sh -c 'echo "deb ${ARTIFACTORY_REPO} ${DISTRO} main" > /etc/apt/sources.list.d/jfrog-artifactory.list'
-                    curl -fsSL https://releases.jfrog.io/artifactory/api/gpg/key/public | sudo tee /etc/apt/trusted.gpg.d/jfrog.asc
-                    sudo apt-get update
-                    sudo apt-get install -y jfrog-artifactory-oss
-                    """
+                git branch: 'main', url: 'https://github.com/mwangiii/ansible-config-mgt.git'
+            }
+        }
+
+        stage('Prepare Ansible For Execution') {
+            steps {
+                sh 'echo ${WORKSPACE}'
+                sh 'sed -i "3 a roles_path=${WORKSPACE}/roles" ${WORKSPACE}/deploy/ansible.cfg'
+            }
+        }
+
+        stage('Install Artifactory on gcp-artifactory') {
+            steps {
+                sshagent(['private-key']) {
+                    sh '''
+                    ssh -o StrictHostKeyChecking=no njekev65@34.71.158.12 << 'EOF'
+                        sudo sh -c 'echo "deb https://releases.jfrog.io/artifactory/artifactory-debs focal main" > /etc/apt/sources.list.d/jfrog-artifactory.list'
+                        sudo apt update
+                        sudo apt-get install jfrog-artifactory-oss
+                    EOF
+                    '''
                 }
             }
         }
 
-        stage('Start Artifactory') {
+        stage('Clean Workspace after build') {
             steps {
-                script {
-                    // Start Artifactory service
-                    sh """
-                    sudo systemctl enable artifactory
-                    sudo systemctl start artifactory
-                    """
-                }
+                cleanWs(cleanWhenAborted: true, cleanWhenFailure: true, cleanWhenNotBuilt: true, cleanWhenUnstable: true, deleteDirs: true)
             }
-        }
-
-        stage('Verify Installation') {
-            steps {
-                script {
-                    // Verify if Artifactory is running
-                    sh """
-                    sudo systemctl status artifactory
-                    """
-                }
-            }
-        }
-    }
-
-    post {
-        always {
-            cleanWs()
         }
     }
 }
