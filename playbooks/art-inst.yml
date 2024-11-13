@@ -1,12 +1,14 @@
-- name: Install JFrog Platform collection from Ansible Galaxy
-  ansible.builtin.command:
-    argv:
-      - ansible-galaxy
-      - collection
-      - install
-      - jfrog.artifactory
-  register: install_output
-  ignore_errors: no
+---
+- name: Install JFrog Artifactory
+  hosts: artifactory
+  become: yes
+  tasks:
+    - name: Install JFrog Platform collection from Ansible Galaxy
+      ansible.builtin.command:
+        cmd: ansible-galaxy collection install jfrog.artifactory
+      register: install_output
+      ignore_errors: no
+
 
 - name: Print installation result
   ansible.builtin.debug:
