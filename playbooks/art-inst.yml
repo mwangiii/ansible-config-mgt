@@ -5,7 +5,7 @@
   tasks:
     - name: Install JFrog Platform collection from Ansible Galaxy
       ansible.builtin.command:
-        cmd: "ansible-galaxy collection install jfrog.platform"
+        _raw_params: "ansible-galaxy collection install jfrog.platform"
       register: install_output
       ignore_errors: no
 
@@ -18,7 +18,7 @@
         name: artifactory
         state: started
         enabled: yes
-      when: artifactory_install is succeeded
+      when: install_output.rc == 0  # Check if the installation was successful
 
     - name: Check if Artifactory port is open
       ansible.builtin.wait_for:
