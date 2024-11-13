@@ -1,8 +1,22 @@
 ---
-- name: Create an empty file on the target hosts
-  hosts: all
+- name: Install Artifactory
+  hosts: artifactory
+  become: yes
   tasks:
-    - name: Delete an empty file
-      file:
-        path: ~/emptyfile.md
-        state: absent
+    - name: Add Artifactory repository
+      apt_repository:
+        repo: "deb https://releases.jfrog.io/artifactory/artifactory-debs focal main"
+        state: present
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install JFrog Artifactory OSS and net-tools
+      apt:
+        name:
+          - jfrog-artifactory-oss
+          - net-tools
+        state: present
+        force: yes
+

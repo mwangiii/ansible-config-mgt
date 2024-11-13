@@ -31,11 +31,7 @@ pipeline {
             steps {
                 sshagent(['private-key']) {
                     sh '''
-                    ssh -o StrictHostKeyChecking=no njekev65@34.71.158.12 << 'EOF'
-                        sudo sh -c 'echo "deb https://releases.jfrog.io/artifactory/artifactory-debs focal main" > /etc/apt/sources.list.d/jfrog-artifactory.list'
-                        sudo apt update -y
-                       sudo DEBIAN_FRONTEND=noninteractive apt-get install -y jfrog-artifactory-oss net-tools 
-                    EOF
+                    ansible-playbook -i inventory/ci.yml playbooks/site.yml
                     '''
                 }
             }

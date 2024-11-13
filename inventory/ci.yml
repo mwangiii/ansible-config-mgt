@@ -6,3 +6,6 @@
 
 [sonarqube]
 10.128.0.4
+
+[artifactory]
+10.128.0.5
