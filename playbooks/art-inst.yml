@@ -1,35 +1,49 @@
 ---
 - name: Install JFrog Artifactory
   hosts: artifactory
-  become: yes
+  become: true
   tasks:
-    - name: Install JFrog Platform collection from Ansible Galaxy
-      command: ansible-galaxy collection install jfrog.artifactory
-      register: install_output
-      ignore_errors: no
+    - name: Set hostname to Artifactory
+      ansible.builtin.hostname:
+        name: Artifactory
 
+    - name: Update Ubuntu OS
+      ansible.builtin.apt:
+        update_cache: yes
 
-- name: Print installation result
-  ansible.builtin.debug:
-    var: install_output.stdout
+    - name: Add JFrog Artifactory APT repository
+      ansible.builtin.apt_repository:
+        repo: "deb https://releases.jfrog.io/artifactory/artifactory-debs xenial main"
+        state: present
+        filename: artifactory
 
-- name: Start JFrog Artifactory service
-  ansible.builtin.systemd:
-    name: artifactory
-    state: started
-    enabled: yes
-  when: install_output.rc == 0  # Check if the installation was successful
+    - name: Import JFrog Artifactory GPG key
+      ansible.builtin.command:
+        cmd: "curl -fsSL https://releases.jfrog.io/artifactory/api/gpg/key/public | gpg --dearmor -o /etc/apt/trusted.gpg.d/artifactory.gpg"
+        creates: /etc/apt/trusted.gpg.d/artifactory.gpg
 
-- name: Check if Artifactory port is open
-  ansible.builtin.wait_for:
-    host: "{{ inventory_hostname }}"
-    port: 8081
-    state: started
-    delay: 10
-    timeout: 60
-  register: port_check
-  ignore_errors: no
+    - name: Update package cache after adding Artifactory repo
+      ansible.builtin.apt:
+        update_cache: yes
 
-- name: Print port check result
-  ansible.builtin.debug:
-    var: port_check
+    - name: Install JFrog Artifactory OSS
+      ansible.builtin.apt:
+        name: jfrog-artifactory-oss
+        state: present
+
+    - name: Start Artifactory service
+      ansible.builtin.service:
+        name: artifactory.service
+        state: started
+
+    - name: Enable Artifactory service to start on boot
+      ansible.builtin.systemd:
+        name: artifactory.service
+        enabled: yes
+
+    - name: Check Artifactory service status
+      ansible.builtin.service_facts:
+
+    - name: Display Artifactory service status
+      ansible.builtin.debug:
+        msg: "{{ ansible_facts.services['artifactory.service'] }}"
