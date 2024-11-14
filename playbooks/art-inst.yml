@@ -19,7 +19,7 @@
 
     - name: Import JFrog Artifactory GPG key
       ansible.builtin.command:
-        cmd: "curl -fsSL https://releases.jfrog.io/artifactory/api/gpg/key/public | gpg --dearmor -o /etc/apt/trusted.gpg.d/artifactory.gpg"
+        _raw_params: "curl -fsSL https://releases.jfrog.io/artifactory/api/gpg/key/public | gpg --dearmor -o /etc/apt/trusted.gpg.d/artifactory.gpg"
         creates: /etc/apt/trusted.gpg.d/artifactory.gpg
 
     - name: Update package cache after adding Artifactory repo
