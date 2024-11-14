@@ -4,11 +4,11 @@
   become: true
   tasks:
     - name: Set hostname to Artifactory
-      ansible.builtin.hostname:
+      hostname:
         name: Artifactory
 
     - name: Update Ubuntu OS
-      ansible.builtin.apt:
+      apt:
         update_cache: yes
 
     - name: Add JFrog Artifactory APT repository
@@ -18,7 +18,7 @@
         filename: artifactory
 
     - name: Check if Artifactory GPG key already exists
-      ansible.builtin.stat:
+      stat:
         path: /etc/apt/trusted.gpg.d/artifactory.gpg
       register: gpg_key
 
@@ -27,21 +27,21 @@
       when: not gpg_key.stat.exists
 
     - name: Update package cache after adding Artifactory repo
-      ansible.builtin.apt:
+      apt:
         update_cache: yes
 
     - name: Install JFrog Artifactory OSS
-      ansible.builtin.apt:
+      apt:
         name: jfrog-artifactory-oss
         state: present
 
     - name: Start Artifactory service
-      ansible.builtin.service:
+      service:
         name: artifactory.service
         state: started
 
     - name: Enable Artifactory service to start on boot
-      ansible.builtin.systemd:
+      systemd:
         name: artifactory.service
         enabled: yes
 
