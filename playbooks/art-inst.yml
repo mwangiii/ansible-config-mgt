@@ -4,11 +4,11 @@
   become: true
   tasks:
     - name: Set hostname to Artifactory
-      hostname:
+      ansible.builtin.hostname:
         name: Artifactory
 
     - name: Update Ubuntu OS
-      apt:
+      ansible.builtin.apt:
         update_cache: yes
 
     - name: Add JFrog Artifactory APT repository
@@ -18,36 +18,44 @@
         filename: artifactory
 
     - name: Check if Artifactory GPG key already exists
-      stat:
+      ansible.builtin.stat:
         path: /etc/apt/trusted.gpg.d/artifactory.gpg
       register: gpg_key
 
     - name: Import JFrog Artifactory GPG key
-      shell: "curl -fsSL https://releases.jfrog.io/artifactory/api/gpg/key/public | gpg --dearmor -o /etc/apt/trusted.gpg.d/artifactory.gpg"
+      ansible.builtin.command: "curl -fsSL https://releases.jfrog.io/artifactory/api/gpg/key/public | gpg --dearmor -o /etc/apt/trusted.gpg.d/artifactory.gpg"
       when: not gpg_key.stat.exists
 
     - name: Update package cache after adding Artifactory repo
-      apt:
+      ansible.builtin.apt:
         update_cache: yes
 
     - name: Install JFrog Artifactory OSS
-      apt:
+      ansible.builtin.apt:
         name: jfrog-artifactory-oss
         state: present
 
     - name: Start Artifactory service
-      service:
+      ansible.builtin.service:
         name: artifactory.service
         state: started
+      ignore_errors: true
 
     - name: Enable Artifactory service to start on boot
-      systemd:
+      ansible.builtin.systemd:
         name: artifactory.service
         enabled: yes
 
-    - name: Check Artifactory service status
-      ansible.builtin.service_facts:
+    - name: Check if Artifactory service is active
+      ansible.builtin.command: "systemctl is-active artifactory.service"
+      register: artifactory_active
+      failed_when: artifactory_active.stdout != "active"
 
-    - name: Display Artifactory service status
+    - name: Display Artifactory service full status
+      ansible.builtin.command: "systemctl status artifactory.service -n 50"
+      register: artifactory_status
+      ignore_errors: true
+
+    - name: Display Artifactory service status output
       ansible.builtin.debug:
-        msg: "{{ ansible_facts.services['artifactory.service'] }}"
+        var: artifactory_status.stdout_lines
