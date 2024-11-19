@@ -13,7 +13,7 @@
 
     - name: Add JFrog Artifactory APT repository
       apt_repository:
-        repo: "deb https://releases.jfrog.io/artifactory/artifactory-debs xenial main"
+        repo: "deb https://releases.jfrog.io/artifactory/artifactory-debs/ jammy main"
         state: present
         filename: artifactory
 
